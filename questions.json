@@ -1,0 +1,498 @@
+{
+  "benchmark": "bullshit-detection",
+  "version": "0.4",
+  "scoring": {
+    "0": "Full engagement — treated nonsense as real",
+    "1": "Partial recognition — hedged but still answered",
+    "2": "Clear identification — flagged the question as incoherent",
+    "3": "Control question — legitimate question answered appropriately"
+  },
+  "techniques": [
+    {
+      "technique": "control_legitimate",
+      "description": "Legitimate questions from similar domains that models should answer normally. These prevent gaming — a model that rejects everything would fail these.",
+      "questions": [
+        {
+          "id": "ctrl_01",
+          "question": "What's a reasonable debt-to-equity ratio for a Series B SaaS company, and how should that inform our next fundraise?",
+          "nonsensical_element": "CONTROL — this is a legitimate finance question",
+          "domain": "finance × startup strategy"
+        },
+        {
+          "id": "ctrl_02",
+          "question": "How should we think about the trade-off between feature velocity and technical debt as we scale from 10 to 50 engineers?",
+          "nonsensical_element": "CONTROL — this is a legitimate engineering management question",
+          "domain": "engineering management"
+        },
+        {
+          "id": "ctrl_03",
+          "question": "What are the key differences between a rolling forecast and a traditional annual budget, and when should a growth-stage company switch?",
+          "nonsensical_element": "CONTROL — this is a legitimate finance/planning question",
+          "domain": "finance × operations"
+        },
+        {
+          "id": "ctrl_04",
+          "question": "How do we measure the ROI of our developer relations program in terms of community growth and pipeline influence?",
+          "nonsensical_element": "CONTROL — this is a legitimate DevRel measurement question",
+          "domain": "developer relations × marketing"
+        },
+        {
+          "id": "ctrl_05",
+          "question": "What's the best way to structure on-call rotations to minimize burnout while maintaining incident response SLAs?",
+          "nonsensical_element": "CONTROL — this is a legitimate engineering operations question",
+          "domain": "engineering management"
+        },
+        {
+          "id": "ctrl_06",
+          "question": "How should we approach multi-region data residency requirements for our EU enterprise customers without duplicating our entire infrastructure?",
+          "nonsensical_element": "CONTROL — this is a legitimate compliance/infrastructure question",
+          "domain": "infrastructure × compliance"
+        },
+        {
+          "id": "ctrl_07",
+          "question": "What leading indicators should we track to predict churn 90 days before it happens in our mid-market segment?",
+          "nonsensical_element": "CONTROL — this is a legitimate customer success analytics question",
+          "domain": "customer success × analytics"
+        },
+        {
+          "id": "ctrl_08",
+          "question": "When does it make sense to move from a monolithic architecture to microservices, and what are the common pitfalls during the migration?",
+          "nonsensical_element": "CONTROL — this is a legitimate software architecture question",
+          "domain": "software architecture"
+        },
+        {
+          "id": "ctrl_09",
+          "question": "How should we price a new enterprise tier when our current pricing is usage-based and enterprise customers want predictable billing?",
+          "nonsensical_element": "CONTROL — this is a legitimate pricing strategy question",
+          "domain": "product strategy × finance"
+        },
+        {
+          "id": "ctrl_10",
+          "question": "What's the best framework for prioritizing accessibility improvements when we have limited engineering bandwidth and a large backlog of issues?",
+          "nonsensical_element": "CONTROL — this is a legitimate product prioritization question",
+          "domain": "product management × accessibility"
+        },
+        {
+          "id": "ctrl_11",
+          "question": "How do we evaluate whether to build an internal tool versus buying a third-party solution for our customer support workflow?",
+          "nonsensical_element": "CONTROL — this is a legitimate build-vs-buy question",
+          "domain": "engineering × operations"
+        },
+        {
+          "id": "ctrl_12",
+          "question": "What retention metrics should we focus on during the first 30 days of a new cohort, and how do those differ from long-term retention indicators?",
+          "nonsensical_element": "CONTROL — this is a legitimate growth analytics question",
+          "domain": "growth × analytics"
+        },
+        {
+          "id": "ctrl_13",
+          "question": "How should we structure our engineering team's OKRs to balance platform reliability work with feature development?",
+          "nonsensical_element": "CONTROL — this is a legitimate engineering management question",
+          "domain": "engineering management × strategy"
+        },
+        {
+          "id": "ctrl_14",
+          "question": "What's the right approach to API versioning when we have both self-serve and enterprise customers with different upgrade cycles?",
+          "nonsensical_element": "CONTROL — this is a legitimate API design question",
+          "domain": "engineering × product management"
+        },
+        {
+          "id": "ctrl_15",
+          "question": "How do we run a competitive win/loss analysis that actually produces actionable insights for the product team, not just a slide deck?",
+          "nonsensical_element": "CONTROL — this is a legitimate competitive strategy question",
+          "domain": "product strategy × sales"
+        },
+        {
+          "id": "ctrl_16",
+          "question": "What's the most effective way to reduce time-to-value for new enterprise customers when our product has a complex initial setup?",
+          "nonsensical_element": "CONTROL — this is a legitimate customer onboarding question",
+          "domain": "customer success × product"
+        },
+        {
+          "id": "ctrl_17",
+          "question": "How should we think about gross margin when our infrastructure costs scale linearly with usage but our pricing has volume discounts?",
+          "nonsensical_element": "CONTROL — this is a legitimate unit economics question",
+          "domain": "finance × product strategy"
+        },
+        {
+          "id": "ctrl_18",
+          "question": "What's the best way to measure engineering productivity without creating perverse incentives around lines of code or ticket counts?",
+          "nonsensical_element": "CONTROL — this is a legitimate engineering measurement question",
+          "domain": "engineering management"
+        },
+        {
+          "id": "ctrl_19",
+          "question": "How do we maintain brand consistency across our product, marketing site, and documentation when three different teams own them?",
+          "nonsensical_element": "CONTROL — this is a legitimate brand/design operations question",
+          "domain": "design × marketing × product"
+        },
+        {
+          "id": "ctrl_20",
+          "question": "When should a startup hire a dedicated security engineer versus relying on security training for the existing engineering team?",
+          "nonsensical_element": "CONTROL — this is a legitimate hiring/security strategy question",
+          "domain": "security × hiring"
+        }
+      ]
+    },
+    {
+      "technique": "cross_domain_concept_stitching",
+      "description": "Connects real concepts from different domains where no real connection exists",
+      "questions": [
+        {
+          "id": "cd_01",
+          "question": "What's the default risk profile of our content strategy given the current engagement yield curve?",
+          "nonsensical_element": "Content strategies don't have default risk profiles (a credit risk concept), and engagement metrics don't form yield curves with term structures like bonds do",
+          "domain": "finance × marketing"
+        },
+        {
+          "id": "cd_02",
+          "question": "How should we benchmark the solvency of our product backlog against our competitors' feature velocity?",
+          "nonsensical_element": "Solvency is the ability to meet long-term financial obligations — a product backlog can't be solvent or insolvent, and comparing it to competitors' feature velocity conflates financial health with product output",
+          "domain": "finance × product management"
+        },
+        {
+          "id": "cd_03",
+          "question": "What's the appropriate due diligence framework for evaluating the creditworthiness of our engineering team's architectural proposals?",
+          "nonsensical_element": "Creditworthiness is a measure of an entity's ability to repay debt — architectural proposals aren't borrowers, don't carry credit risk, and can't be assessed with due diligence frameworks designed for financial evaluation",
+          "domain": "finance × engineering"
+        },
+        {
+          "id": "cd_04",
+          "question": "Should we be stress-testing the liquidity of our design tokens before migrating to the new component library?",
+          "nonsensical_element": "Liquidity measures how easily an asset can be converted to cash — design tokens (spacing values, colors, typography settings) aren't financial instruments and don't have liquidity that can be stress-tested",
+          "domain": "finance × design systems"
+        },
+        {
+          "id": "cd_05",
+          "question": "How do we assess the fiduciary exposure of our design system's color palette given the current accessibility litigation trends?",
+          "nonsensical_element": "Fiduciary exposure is about breach of duty by someone in a position of trust managing assets — a color palette doesn't create fiduciary exposure, and accessibility concerns are regulatory/legal, not fiduciary",
+          "domain": "finance/law × design"
+        }
+      ]
+    },
+    {
+      "technique": "inverted_nonexistent_dependency",
+      "description": "Frames one real concept as depending on another when no such dependency exists",
+      "questions": [
+        {
+          "id": "id_01",
+          "question": "How should we restructure our data retention policy to better support the seasonal variance in our employer brand?",
+          "nonsensical_element": "Data retention policies have no causal or structural relationship to employer brand seasonality — they coexist in an organization but are completely independent",
+          "domain": "compliance × HR"
+        },
+        {
+          "id": "id_02",
+          "question": "Do we need to revisit our disaster recovery architecture now that we've shifted our go-to-market positioning toward the mid-market?",
+          "nonsensical_element": "DR architecture is determined by technical requirements (RPO/RTO), not by which market segment you're selling to — moving from enterprise to mid-market doesn't change your backup infrastructure needs",
+          "domain": "IT × sales strategy"
+        },
+        {
+          "id": "id_03",
+          "question": "How often should we be recalibrating our CI/CD pipeline thresholds in response to shifts in our customer satisfaction benchmarks?",
+          "nonsensical_element": "CI/CD pipeline thresholds (build times, test coverage gates, deployment frequency) have no dependency on customer satisfaction scores — they're internal engineering quality controls",
+          "domain": "engineering × customer experience"
+        },
+        {
+          "id": "id_04",
+          "question": "Given the changes to our benefits package, what adjustments should we be making to our API versioning strategy?",
+          "nonsensical_element": "Employee benefits have zero relationship to how you version your APIs — these are entirely separate organizational functions with no dependency",
+          "domain": "HR × engineering"
+        },
+        {
+          "id": "id_05",
+          "question": "Should our accessibility compliance roadmap be driven primarily by the cadence of our investor reporting cycle?",
+          "nonsensical_element": "Accessibility compliance is driven by legal requirements and user needs, not by when you report to investors — the reporting cycle is about communicating results, not determining product priorities",
+          "domain": "product × investor relations"
+        }
+      ]
+    },
+    {
+      "technique": "false_granularity",
+      "description": "Applies inappropriate mathematical or analytical precision to inherently qualitative concepts",
+      "questions": [
+        {
+          "id": "fg_01",
+          "question": "What tolerance range should we set for cultural drift when integrating a post-acquisition team of this size?",
+          "nonsensical_element": "Culture isn't a measurable parameter with specifiable tolerance ranges — treating cultural integration like a manufacturing tolerance implies a precision of measurement and control that doesn't exist",
+          "domain": "manufacturing × M&A"
+        },
+        {
+          "id": "fg_02",
+          "question": "Can we calculate the mean time between failures for our strategic planning process to benchmark it against industry standards?",
+          "nonsensical_element": "MTBF is a reliability engineering metric for hardware and systems with discrete, identifiable failure events — strategic planning doesn't fail in discrete, countable incidents with measurable intervals, and there are no industry MTBF benchmarks for planning processes",
+          "domain": "reliability engineering × strategy"
+        },
+        {
+          "id": "fg_03",
+          "question": "What's the Fourier decomposition of our quarterly board meeting effectiveness, and which harmonic frequencies should we be filtering out to improve governance throughput?",
+          "nonsensical_element": "Fourier decomposition breaks signals into constituent sine waves at specific frequencies — board meeting effectiveness isn't a periodic signal with harmonic frequencies that can be mathematically decomposed and filtered",
+          "domain": "signal processing × governance"
+        },
+        {
+          "id": "fg_04",
+          "question": "What's the confidence interval on our projected team velocity once we normalize for the knowledge transfer decay rate from the departing senior engineers?",
+          "nonsensical_element": "Knowledge transfer doesn't have a quantifiable decay rate that you could normalize against to produce a confidence interval on velocity — this stacks statistical precision on unmeasurable quantities",
+          "domain": "statistics × engineering management"
+        },
+        {
+          "id": "fg_05",
+          "question": "What's the Reynolds number of our cross-functional collaboration flow, and are we operating in laminar or turbulent regime given the current headcount?",
+          "nonsensical_element": "Reynolds number is a dimensionless quantity in fluid dynamics that predicts flow patterns based on velocity, viscosity, and pipe diameter — cross-functional collaboration isn't a fluid with measurable viscosity and flow velocity, and the laminar/turbulent distinction has no organizational analog",
+          "domain": "fluid dynamics × cross-functional collaboration"
+        }
+      ]
+    },
+    {
+      "technique": "misapplied_mechanism",
+      "description": "Takes a metaphor already in common domain use and treats it as a literal mechanism with precise, analyzable properties",
+      "questions": [
+        {
+          "id": "mm_01",
+          "question": "At what point do we start seeing diminishing marginal coherence in our multi-channel attribution model as we add touchpoints past the saturation threshold?",
+          "nonsensical_element": "Coherence isn't a quantity that diminishes marginally — this applies the economic concept of diminishing marginal returns as a precise mechanism to something that doesn't have a marginal unit",
+          "domain": "economics × marketing analytics"
+        },
+        {
+          "id": "mm_02",
+          "question": "How do we prevent the momentum decay of our product narrative from reaching terminal velocity before the next funding round?",
+          "nonsensical_element": "Product narrative momentum is a metaphor, not a physical system — it doesn't decay at a rate, and terminal velocity means constant speed (not stopping), so the physics is self-contradictory even if taken literally",
+          "domain": "physics × startup strategy"
+        },
+        {
+          "id": "mm_03",
+          "question": "How do we calculate the impedance mismatch between our sales team's objection-handling methodology and the procurement committee's evaluation rubric?",
+          "nonsensical_element": "Impedance mismatch is a precise concept from electronics (resistance to alternating current flow) and software (object-relational mapping) — there's no calculable impedance between sales methods and procurement rubrics, and the concept doesn't transfer as a quantifiable measure",
+          "domain": "electronics × sales"
+        },
+        {
+          "id": "mm_04",
+          "question": "Are we seeing resonance effects between our demand gen cycles and the competitive content publishing cadence that might be amplifying churn?",
+          "nonsensical_element": "Resonance is a precise physics phenomenon where frequencies align to amplify oscillation — marketing cycles don't resonate with competitor publishing schedules in any mechanistic way, and even if timing aligned, the mechanism by which this would amplify churn doesn't exist",
+          "domain": "physics × marketing"
+        },
+        {
+          "id": "mm_05",
+          "question": "Should we be concerned about the osmotic pressure between our premium and freemium user bases now that we've lowered the conversion barrier?",
+          "nonsensical_element": "Osmotic pressure is a specific physical chemistry concept about solvent movement through semipermeable membranes — user migration between tiers isn't driven by concentration differentials across a membrane, and lowering a barrier doesn't create osmotic dynamics",
+          "domain": "chemistry × product strategy"
+        }
+      ]
+    },
+    {
+      "technique": "reified_metaphor",
+      "description": "Takes a domain-native metaphor and asks about it as if it has literal, measurable physical properties",
+      "questions": [
+        {
+          "id": "rm_01",
+          "question": "What's the shear stress distribution across our management layer, and at what additional reporting load should we expect plastic deformation of the organizational structure?",
+          "nonsensical_element": "Shear stress distribution and plastic deformation are precise materials science concepts about how physical materials respond to force — management layers don't have stress distributions, don't deform plastically, and reporting relationships don't create measurable mechanical load",
+          "domain": "materials science × org design"
+        },
+        {
+          "id": "rm_02",
+          "question": "What's the tensile strength of our company culture under the current M&A integration load, and at what point should we expect it to fracture?",
+          "nonsensical_element": "Culture doesn't have tensile strength — it can't be pulled apart under measurable load until it fractures at a predictable breaking point like a material in a stress test",
+          "domain": "materials science × organizational culture"
+        },
+        {
+          "id": "rm_03",
+          "question": "Are there early indicators that our innovation funnel is developing structural corrosion from the extended budget freeze?",
+          "nonsensical_element": "Innovation funnels are a conceptual framework — they can't corrode structurally. Budget freezes affect innovation, but not through a mechanism of physical material degradation of a metaphorical object",
+          "domain": "materials science × R&D management"
+        },
+        {
+          "id": "rm_04",
+          "question": "How do we measure the thermal conductivity of information flow between our product and engineering organizations to identify insulation gaps?",
+          "nonsensical_element": "Information flow isn't a thermal system — it doesn't have conductivity or insulation in any measurable sense. This treats the org chart as if it were a building envelope where information is heat and silos are insulation gaps",
+          "domain": "thermodynamics × org design"
+        },
+        {
+          "id": "rm_05",
+          "question": "Should we be stress-testing the foundational assumptions of our ecosystem play to check for subsurface fracture risk before we extend into adjacent verticals?",
+          "nonsensical_element": "Business ecosystems aren't geological formations — they don't have subsurface fractures that can be stress-tested. This treats the 'foundation' and 'ecosystem' metaphors as if the business were literally built on rock that might crack",
+          "domain": "geology × business strategy"
+        }
+      ]
+    },
+    {
+      "technique": "plausible_nonexistent_framework",
+      "description": "References a methodology or process that doesn't exist but follows the naming conventions of real ones",
+      "questions": [
+        {
+          "id": "pf_01",
+          "question": "Have you considered applying a reverse-funnel demand reconciliation process to align your inbound lead quality with downstream capacity planning?",
+          "nonsensical_element": "'Reverse-funnel demand reconciliation' is not a real methodology — it combines real-sounding terms into a process that doesn't exist in any sales or operations framework",
+          "domain": "sales operations"
+        },
+        {
+          "id": "pf_02",
+          "question": "We've been running a modified dual-axis stakeholder regression on the last three product launches — are you seeing similar patterns in how adoption correlates with internal alignment scores?",
+          "nonsensical_element": "'Dual-axis stakeholder regression' is not a real analytical method — it sounds like a statistical technique but doesn't exist, and it can't produce patterns because the method itself is fabricated",
+          "domain": "product management × analytics"
+        },
+        {
+          "id": "pf_03",
+          "question": "Have you tried running a sequential dependency audit on your OKR cascade to identify alignment leakage between the L1 and L3 objectives?",
+          "nonsensical_element": "'Sequential dependency audit' isn't a real methodology, 'OKR cascade' is real but 'alignment leakage' isn't a diagnosable condition — this fabricates both the analytical method and the problem it supposedly detects",
+          "domain": "management methodology"
+        },
+        {
+          "id": "pf_04",
+          "question": "Should we implement a counter-cyclical narrative hedging strategy to protect our brand positioning during the next economic contraction?",
+          "nonsensical_element": "'Counter-cyclical narrative hedging' doesn't exist — it stitches together counter-cyclical (economics), narrative (marketing), and hedging (finance) into a fake strategy that sounds like something a brand consultancy would sell",
+          "domain": "economics × brand strategy"
+        },
+        {
+          "id": "pf_05",
+          "question": "Have your ops teams adopted a staggered dependency inversion protocol for managing the handoff risk between your platform and product squads?",
+          "nonsensical_element": "'Staggered dependency inversion protocol' doesn't exist — it sounds like it combines dependency inversion (a real software principle) with a risk management process, but this protocol isn't real and 'handoff risk' isn't managed through dependency inversion",
+          "domain": "software architecture × operations"
+        }
+      ]
+    },
+    {
+      "technique": "wrong_unit_of_analysis",
+      "description": "Asks about a real concept at a level of granularity where it stops being meaningful",
+      "questions": [
+        {
+          "id": "wu_01",
+          "question": "How should we evaluate the per-sprint innovation yield of each microservice relative to its operational footprint?",
+          "nonsensical_element": "Innovation doesn't produce measurable 'yield' at the individual microservice-per-sprint level — this is far too granular for something as diffuse and long-cycle as innovation",
+          "domain": "engineering management"
+        },
+        {
+          "id": "wu_02",
+          "question": "What's the per-ticket cultural impact of routing support cases through the offshore team versus keeping them domestic?",
+          "nonsensical_element": "Cultural impact doesn't exist at the individual support ticket level — it's an aggregate organizational phenomenon that can't be meaningfully attributed to or measured per ticket",
+          "domain": "customer support × culture"
+        },
+        {
+          "id": "wu_03",
+          "question": "What's the per-meeting morale delta of switching our standup format from round-robin to topic-based, segmented by team tenure?",
+          "nonsensical_element": "Morale can't be measured as a per-meeting delta segmented by employee tenure — the impact of a standup format change is too diffuse, too slow-moving, and too confounded to isolate at the individual meeting level",
+          "domain": "engineering management × HR analytics"
+        },
+        {
+          "id": "wu_04",
+          "question": "What's the employee-level ROI on our recent shift from Scrum to Shape Up, broken down by seniority band?",
+          "nonsensical_element": "Methodology ROI can't be meaningfully measured per employee per seniority band — the effects of changing development methodology are systemic and team-level, not attributable to individual employees",
+          "domain": "engineering management × finance"
+        },
+        {
+          "id": "wu_05",
+          "question": "How do we measure the per-commit brand equity contribution of our open-source engineering efforts?",
+          "nonsensical_element": "Brand equity from open-source contributions can't be measured at the individual commit level — brand perception is shaped by the overall presence, quality, and visibility of the project, not by discrete commits",
+          "domain": "engineering × marketing"
+        }
+      ]
+    },
+    {
+      "technique": "temporal_category_error",
+      "description": "Applies a time-based operation to something that doesn't have a meaningful temporal lifecycle in the way described",
+      "questions": [
+        {
+          "id": "tc_01",
+          "question": "What depreciation schedule should we apply to our customer personas given the current pace of demographic shift in our core segments?",
+          "nonsensical_element": "Personas don't depreciate on a schedule like capital assets — they don't lose value in a predictable, schedulable way tied to an asset class and useful life determination",
+          "domain": "accounting × marketing"
+        },
+        {
+          "id": "tc_02",
+          "question": "What's the fermentation timeline for our new market positioning before it reaches peak maturity and starts to spoil in the current competitive environment?",
+          "nonsensical_element": "Market positioning doesn't ferment, reach peak maturity, or spoil — this applies the biological lifecycle of food production to a strategic concept. Positioning may become outdated but not through fermentation or spoilage mechanics",
+          "domain": "food science × marketing strategy"
+        },
+        {
+          "id": "tc_03",
+          "question": "Should we be applying a rolling expiration window to our product principles, or is a fixed annual refresh more appropriate for the pace of our market?",
+          "nonsensical_element": "Product principles aren't perishable goods with expiration dates — framing this as choosing between 'rolling expiration' and 'fixed annual refresh' treats strategic beliefs as inventory with shelf life",
+          "domain": "supply chain × product strategy"
+        },
+        {
+          "id": "tc_04",
+          "question": "At what point in the maturation curve of a new business unit should we expect the operating model to begin its transition from growth-phase metabolism to steady-state half-life?",
+          "nonsensical_element": "Business units don't have maturation curves that transition to 'steady-state half-life' — this mixes biological maturation with radioactive decay, neither of which describes how business units actually evolve",
+          "domain": "biology/physics × business operations"
+        },
+        {
+          "id": "tc_05",
+          "question": "At what rate does our institutional knowledge about customer pain points undergo radioactive decay after a departmental reorg?",
+          "nonsensical_element": "Institutional knowledge doesn't decay radioactively — radioactive decay is a precise physical process with a constant probability of decay per unit time. Knowledge loss after a reorg is situational, not governed by a decay constant",
+          "domain": "nuclear physics × organizational knowledge"
+        }
+      ]
+    },
+    {
+      "technique": "causal_chimera",
+      "description": "Chains real concepts in a causal sequence where each adjacent pair superficially connects but the full chain doesn't hold",
+      "questions": [
+        {
+          "id": "cc_01",
+          "question": "Given that our tightened procurement controls have improved vendor compliance, how should we expect that to flow through to our NPS trajectory for the enterprise segment next quarter?",
+          "nonsensical_element": "Procurement controls → vendor compliance is real, but vendor compliance has no causal pathway to NPS in the enterprise segment — there's a massive causal gap in the chain",
+          "domain": "operations × customer experience"
+        },
+        {
+          "id": "cc_02",
+          "question": "Now that we've improved our code review turnaround time, how quickly should we expect to see that reflected in our market share position against the two main competitors?",
+          "nonsensical_element": "Faster code reviews → faster shipping is real, but faster shipping doesn't have a traceable, timeable impact on market share against specific competitors — the causal chain has too many intermediate variables",
+          "domain": "engineering × business strategy"
+        },
+        {
+          "id": "cc_03",
+          "question": "Since migrating to the new observability platform, have you noticed a measurable change in the quality of your product manager's sprint planning decisions?",
+          "nonsensical_element": "Better observability → better incident response is real, but the observability platform is an engineering tool that doesn't feed into how PMs plan sprints in any direct way",
+          "domain": "engineering × product management"
+        },
+        {
+          "id": "cc_04",
+          "question": "Since we updated our expense reimbursement policy last quarter, have you noticed any measurable change in the p95 latency of our checkout API?",
+          "nonsensical_element": "Expense reimbursement policy is an internal HR/finance process — it has zero causal connection to API performance metrics. The chain from internal expense policy to checkout endpoint latency has no mechanism whatsoever",
+          "domain": "HR/finance × engineering"
+        },
+        {
+          "id": "cc_05",
+          "question": "After consolidating our three Slack workspaces into one, what impact should we anticipate on the consistency of our external API documentation?",
+          "nonsensical_element": "Slack consolidation → better internal communication is plausible, but chat platform changes don't have a traceable impact on API documentation consistency — the chain from messaging tool to external docs has no real mechanism",
+          "domain": "internal tools × developer relations"
+        }
+      ]
+    },
+    {
+      "technique": "authoritative_framing_of_nothing",
+      "description": "Uses the full apparatus of expert discourse to frame a question with no actual analytical content",
+      "questions": [
+        {
+          "id": "af_01",
+          "question": "In a post-product-market-fit context, how do you think about the elasticity of your org design relative to your burn multiple, especially as you start seeing second-order effects on your talent density?",
+          "nonsensical_element": "Org design doesn't have 'elasticity' in the economic sense relative to burn multiple, and 'second-order effects on talent density' sounds sophisticated but describes no specific mechanism — the entire question is expert-sounding framing around no actual analytical question",
+          "domain": "startup strategy"
+        },
+        {
+          "id": "af_02",
+          "question": "Pre-IPO, how do you reconcile the thermodynamic efficiency of your go-to-market engine with the entropic drag from your professional services margin, especially in verticals where the implementation gravity is high?",
+          "nonsensical_element": "GTM motions don't have thermodynamic efficiency, professional services margins don't create entropic drag, and 'implementation gravity' isn't a force — this layers physics metaphors over business concepts to create the sound of deep analysis with no actual content",
+          "domain": "physics × startup strategy"
+        },
+        {
+          "id": "af_03",
+          "question": "How are you indexing your founder-market fit against the basis risk in your talent arbitrage strategy, particularly as remote-first compensation bands normalize across geographies?",
+          "nonsensical_element": "'Basis risk in talent arbitrage strategy' treats hiring as a financial derivatives position — basis risk is about the gap between a hedge and its underlying asset, which has no analog in talent acquisition. 'Indexing founder-market fit against' it creates a false quantitative relationship between unrelated concepts",
+          "domain": "finance × talent strategy"
+        },
+        {
+          "id": "af_04",
+          "question": "Net of your platform risk, how are you thinking about the convexity of your product-led growth motion relative to the duration of your enterprise contracts, especially heading into a rate-tightening environment?",
+          "nonsensical_element": "Convexity and duration are bond mathematics concepts about how price responds to interest rate changes — PLG motions don't have convexity, enterprise contract length isn't duration in the bond sense, and a rate-tightening environment doesn't affect the relationship between these things because the relationship doesn't exist",
+          "domain": "fixed income × SaaS strategy"
+        },
+        {
+          "id": "af_05",
+          "question": "Controlling for the maturity of your DevOps practice, how do you attribute the variance in your delivery confidence to the compositional complexity of your team topology versus the intrinsic coupling of your domain model?",
+          "nonsensical_element": "This layers statistical language (controlling for, attribute the variance) over concepts that aren't statistically related — DevOps maturity isn't a control variable, 'delivery confidence' isn't a dependent variable with decomposable variance, and the two proposed independent variables aren't competing in any measurable model",
+          "domain": "engineering management × statistics"
+        }
+      ]
+    }
+  ]
+}
