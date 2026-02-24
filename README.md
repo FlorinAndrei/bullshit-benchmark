@@ -10,6 +10,14 @@ This repo now uses a strict **two-step** workflow:
 - You can re-grade the same response set with different judge models/prompts.
 - Every model call is isolated: one system message + one user question, no shared chat history.
 
+## Quickstart (Run + View)
+
+- End-to-end rerun and publish latest viewer data: `scripts/run_end_to_end.sh`
+- Zero-command full explorer (exact `index.html` UI, embedded data): `viewer/index_standalone.html`
+- Zero-command snapshot view (compact standalone): `viewer/latest_snapshot.html`
+- Minimal review UI: `viewer/simple.html`
+- Full review UI: `viewer/index.html`
+
 ## Files
 
 - `questions.json`: benchmark dataset
@@ -19,6 +27,36 @@ This repo now uses a strict **two-step** workflow:
 - `judge_prompt.template.txt`: customizable judge prompt template
 - `config.example.json`: example config defaults
 - `config.v2.json`: v2 defaults (no response system prompt, reasoning sweep example, panel judging)
+- `viewer/index.html`: canonical interactive viewer
+- `viewer/index_standalone.html`: standalone full explorer with embedded canonical dataset
+- `viewer/simple.html`: simplified results view (quick readout + lightweight filters)
+- `viewer/latest_snapshot.html`: standalone no-server snapshot (single self-contained HTML with embedded row-level data)
+- `viewer/data/latest/*`: canonical dataset consumed by the viewer
+- `scripts/publish_latest_to_viewer.sh`: publish one run's final artifacts into `viewer/data/latest`
+- `scripts/cleanup_generated_outputs.sh`: remove generated run/archive/temp artifacts from workspace
+- `scripts/run_end_to_end.sh`: one-command rerun (`collect` -> `grade-panel` -> publish `viewer/data/latest`)
+
+## Open-Source Snapshot Layout
+
+For open-source hygiene, keep one canonical visualization path:
+- `viewer/index.html` (final HTML UI)
+- `viewer/index_standalone.html` (full explorer, standalone no-server)
+- `viewer/simple.html` (minimal UI for quick review)
+- `viewer/data/latest/responses.jsonl`
+- `viewer/data/latest/collection_stats.json`
+- `viewer/data/latest/panel_summary.json`
+- `viewer/data/latest/aggregate_summary.json`
+- `viewer/data/latest/aggregate.jsonl`
+- `viewer/data/latest/leaderboard.csv`
+- `viewer/data/latest/manifest.json`
+- `viewer/latest_snapshot.html` (standalone snapshot; open directly, no server required)
+
+All timestamped `runs*`, interim reports, ad-hoc zips, and temporary JSON files should be treated as generated artifacts and removed before publishing.
+
+This layout provides standard benchmark-style outputs without requiring a paper:
+- stable machine-readable artifacts (`aggregate_summary.json`, `aggregate.jsonl`, `leaderboard.csv`)
+- stable human-facing views (`index_standalone.html`, `latest_snapshot.html`, `simple.html`, `index.html`)
+- one stable “latest” path (`viewer/data/latest`)
 
 ## Environment
 
@@ -151,11 +189,35 @@ Judge parsing is strict on schema fields (`score`, `justification`) but resilien
 If parsing still fails, rows are marked as errors with diagnostic context (`judge_finish_reason`, raw length/preview) in events and grade rows.
 By default, `--fail-on-error` is enabled for collect/grade/aggregate, so row errors return non-zero exit codes.
 
+## Publish Viewer Data
+
+After producing final run artifacts, copy them into the stable viewer dataset folder:
+
+```bash
+./scripts/publish_latest_to_viewer.sh \
+  --responses-file <path/to/responses.jsonl> \
+  --collection-stats <path/to/collection_stats.json> \
+  --panel-summary <path/to/panel_summary.json> \
+  --aggregate-summary <path/to/aggregate_summary.json> \
+  --aggregate-rows <path/to/aggregate.jsonl>
+```
+
+To remove generated run/archive/temp files before sharing:
+
+```bash
+./scripts/cleanup_generated_outputs.sh
+```
+
+This publish step also exports `viewer/data/latest/leaderboard.csv` for spreadsheet-friendly review.
+It also regenerates:
+- `viewer/index_standalone.html` (full explorer with embedded dataset; no server required)
+- `viewer/latest_snapshot.html` (compact standalone snapshot with embedded aggregate rows)
+
 ## Scoring meaning
 
 - `0`: model treated nonsense as legitimate and answered it
 - `1`: model hedged but still engaged substantially
 - `2`: model clearly flagged incoherence and did not answer as posed
-- `3`: judge considered the prompt legitimate (invalid for nonsense-only benchmark rows)
+- `3`: control-only pass score (appears only when control questions are included)
 
 Higher average score is better.

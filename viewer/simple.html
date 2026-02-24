@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bullshit Benchmark - Simple View</title>
+  <style>
+    :root {
+      --bg: #f6f6f4;
+      --panel: #ffffff;
+      --ink: #1f2328;
+      --muted: #606770;
+      --line: #dde1e6;
+      --green: #1f9d55;
+      --amber: #c57a00;
+      --red: #c13d36;
+      --shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    .page {
+      width: min(1300px, 95vw);
+      margin: 22px auto 40px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    h1, h2 { margin: 0; }
+
+    h1 {
+      font-size: 1.6rem;
+      font-family: "Rockwell", "Georgia", serif;
+    }
+
+    h2 {
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+      font-family: "Rockwell", "Georgia", serif;
+    }
+
+    .muted { color: var(--muted); }
+
+    .hero-top {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hero-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .link-btn {
+      text-decoration: none;
+      border: 1px solid #1f7a71;
+      background: #1f7a71;
+      color: #fff;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 0.86rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .link-btn.alt {
+      border-color: #c7d2da;
+      background: #fff;
+      color: #2f3a42;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfcfd;
+    }
+
+    .stat .k {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .stat .v {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    label {
+      display: grid;
+      gap: 4px;
+      font-size: 0.82rem;
+      color: #3f4952;
+    }
+
+    input, select, button {
+      border: 1px solid #c7d2da;
+      border-radius: 9px;
+      padding: 8px 9px;
+      font-size: 0.9rem;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    button {
+      cursor: pointer;
+      background: #f5f8fb;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      max-height: 560px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 9px;
+      border-bottom: 1px solid #edf1f5;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f7fafc;
+      font-size: 0.8rem;
+      color: #3f4952;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      display: inline-block;
+      min-width: 56px;
+      text-align: center;
+    }
+
+    .green { background: #e5f7ed; color: #0f7a3f; }
+    .amber { background: #fff3e0; color: #8a5a00; }
+    .red { background: #fde9e8; color: #9d2c26; }
+    .error { background: #f0f2f5; color: #5a6570; }
+
+    @media (max-width: 1080px) {
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .filters { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="panel">
+      <div class="hero-top">
+        <div>
+          <h1>Bullshit Benchmark - Simple View</h1>
+          <p class="muted" id="datasetMeta">Loading canonical dataset...</p>
+        </div>
+        <div class="hero-links">
+          <a class="link-btn alt" href="index.html">Open Full Explorer</a>
+          <a class="link-btn alt" href="data/latest/leaderboard.csv">Download Leaderboard CSV</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>At a Glance</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Leaderboard</h2>
+      <div class="filters">
+        <label>
+          <span>Search model</span>
+          <input id="searchInput" type="text" placeholder="e.g. claude, gpt, gemini">
+        </label>
+        <label>
+          <span>Org</span>
+          <select id="orgSelect"></select>
+        </label>
+        <label>
+          <span>Reasoning</span>
+          <select id="reasoningSelect"></select>
+        </label>
+        <label>
+          <span>Sort</span>
+          <select id="sortSelect">
+            <option value="avg_desc">Avg score (high to low)</option>
+            <option value="avg_asc">Avg score (low to high)</option>
+            <option value="green_desc">Green rate (high to low)</option>
+            <option value="red_asc">Red rate (low to high)</option>
+            <option value="model_asc">Model (A-Z)</option>
+          </select>
+        </label>
+        <button id="downloadCsvBtn" type="button">Download CSV</button>
+      </div>
+      <p class="muted" id="tableMeta"></p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Model</th>
+              <th>Org</th>
+              <th>Reasoning</th>
+              <th>Avg</th>
+              <th>Green</th>
+              <th>Red</th>
+              <th>2/1/0</th>
+              <th>Rows</th>
+              <th>Errors</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Question Lookup</h2>
+      <div class="filters" style="grid-template-columns: 2fr 1fr auto auto auto;">
+        <label style="grid-column: span 2;">
+          <span>Question ID</span>
+          <select id="questionSelect"></select>
+        </label>
+        <button type="button" id="questionTopBtn">Top 10</button>
+        <button type="button" id="questionBottomBtn">Bottom 10</button>
+        <button type="button" id="questionAllBtn">All</button>
+      </div>
+      <p class="muted" id="questionMeta">Pick a question to inspect model-level outcomes.</p>
+      <div class="table-wrap" style="max-height: 420px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Consensus</th>
+              <th>Band</th>
+              <th>Technique</th>
+            </tr>
+          </thead>
+          <tbody id="questionBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const DEFAULT_PATHS = {
+      manifest: "viewer/data/latest/manifest.json",
+      collectionStats: "viewer/data/latest/collection_stats.json",
+      panelSummary: "viewer/data/latest/panel_summary.json",
+      aggregateSummary: "viewer/data/latest/aggregate_summary.json",
+      aggregateRows: "viewer/data/latest/aggregate.jsonl",
+    };
+
+    const state = {
+      manifest: null,
+      collectionStats: null,
+      panelSummary: null,
+      aggregateSummary: null,
+      rows: [],
+      leaderboard: [],
+      questionSliceMode: "top",
+    };
+
+    const el = {};
+
+    function defaultPathPrefix() {
+      const pathname = window.location.pathname || "";
+      return pathname.includes("/viewer/") ? "../" : "";
+    }
+
+    function resolvedPaths() {
+      const prefix = defaultPathPrefix();
+      return {
+        manifest: `${prefix}${DEFAULT_PATHS.manifest}`,
+        collectionStats: `${prefix}${DEFAULT_PATHS.collectionStats}`,
+        panelSummary: `${prefix}${DEFAULT_PATHS.panelSummary}`,
+        aggregateSummary: `${prefix}${DEFAULT_PATHS.aggregateSummary}`,
+        aggregateRows: `${prefix}${DEFAULT_PATHS.aggregateRows}`,
+      };
+    }
+
+    async function fetchText(path) {
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText} for ${path}`);
+      }
+      return response.text();
+    }
+
+    async function fetchJson(path, required = true) {
+      try {
+        return JSON.parse(await fetchText(path));
+      } catch (error) {
+        if (!required) {
+          return null;
+        }
+        throw error;
+      }
+    }
+
+    function parseJsonl(text) {
+      const lines = text.split(/\r?\n/);
+      const out = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          continue;
+        }
+        out.push(JSON.parse(trimmed));
+      }
+      return out;
+    }
+
+    function fmt(value, digits = 4) {
+      return Number.isFinite(value) ? Number(value).toFixed(digits) : "-";
+    }
+
+    function pct(value) {
+      return Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "-";
+    }
+
+    function modelParts(modelLabel) {
+      const text = String(modelLabel || "");
+      const slashIdx = text.indexOf("/");
+      const org = slashIdx >= 0 ? text.slice(0, slashIdx) : "unknown";
+      const reasoningMatch = text.match(/@reasoning=([^@]+)$/);
+      const reasoning = reasoningMatch ? reasoningMatch[1] : "default";
+      return { org, reasoning };
+    }
+
+    function scoreBand(value) {
+      if (!Number.isFinite(value)) {
+        return { key: "error", label: "Error" };
+      }
+      if (value >= 1.5) {
+        return { key: "green", label: "Green" };
+      }
+      if (value >= 0.5) {
+        return { key: "amber", label: "Amber" };
+      }
+      return { key: "red", label: "Red" };
+    }
+
+    function uniqueSorted(values) {
+      return [...new Set(values)].sort((a, b) => String(a).localeCompare(String(b)));
+    }
+
+    function fillSelect(select, values, allLabel = "All") {
+      const current = select.value;
+      select.innerHTML = "";
+      const allOpt = document.createElement("option");
+      allOpt.value = "all";
+      allOpt.textContent = allLabel;
+      select.appendChild(allOpt);
+      values.forEach((value) => {
+        const opt = document.createElement("option");
+        opt.value = String(value);
+        opt.textContent = String(value);
+        select.appendChild(opt);
+      });
+      if ([...select.options].some((opt) => opt.value === current)) {
+        select.value = current;
+      }
+    }
+
+    function renderStats() {
+      const agg = state.aggregateSummary || {};
+      const rel = agg.reliability || {};
+      const top = (agg.leaderboard || [])[0] || null;
+      const items = [
+        ["Models", (agg.leaderboard || []).length],
+        ["Rows scored", agg.total_scored_records ?? "-"],
+        ["Rows errors", agg.total_error_records ?? "-"],
+        ["Pairwise agreement", pct(rel.average_pairwise_agreement)],
+        ["Krippendorff alpha", fmt(rel.krippendorff_alpha_ordinal, 3)],
+        ["Top model", top ? top.model : "-"],
+      ];
+      el.stats.innerHTML = items.map(([k, v]) => `
+        <div class="stat">
+          <div class="k">${k}</div>
+          <div class="v">${v}</div>
+        </div>
+      `).join("");
+    }
+
+    function filteredLeaderboard() {
+      const search = el.searchInput.value.trim().toLowerCase();
+      const selectedOrg = el.orgSelect.value;
+      const selectedReasoning = el.reasoningSelect.value;
+      const sort = el.sortSelect.value;
+
+      let rows = [...state.leaderboard];
+
+      rows = rows.filter((row) => {
+        const model = String(row.model || "");
+        const { org, reasoning } = modelParts(model);
+        if (selectedOrg !== "all" && org !== selectedOrg) {
+          return false;
+        }
+        if (selectedReasoning !== "all" && reasoning !== selectedReasoning) {
+          return false;
+        }
+        if (search && !model.toLowerCase().includes(search)) {
+          return false;
+        }
+        return true;
+      });
+
+      rows.sort((a, b) => {
+        if (sort === "avg_asc") {
+          return (a.avg_score ?? -999) - (b.avg_score ?? -999);
+        }
+        if (sort === "green_desc") {
+          return (b.detection_rate_score_2 ?? -999) - (a.detection_rate_score_2 ?? -999);
+        }
+        if (sort === "red_asc") {
+          return (a.full_engagement_rate_score_0 ?? 999) - (b.full_engagement_rate_score_0 ?? 999);
+        }
+        if (sort === "model_asc") {
+          return String(a.model || "").localeCompare(String(b.model || ""));
+        }
+        return (b.avg_score ?? -999) - (a.avg_score ?? -999);
+      });
+
+      return rows;
+    }
+
+    function renderLeaderboard() {
+      const rows = filteredLeaderboard();
+      el.tableMeta.textContent = `Showing ${rows.length} model rows.`;
+      el.leaderboardBody.innerHTML = rows.map((row, idx) => {
+        const { org, reasoning } = modelParts(row.model);
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${row.model || ""}</td>
+            <td>${org}</td>
+            <td>${reasoning}</td>
+            <td>${fmt(row.avg_score)}</td>
+            <td>${pct(row.detection_rate_score_2)}</td>
+            <td>${pct(row.full_engagement_rate_score_0)}</td>
+            <td>${row.score_2 ?? 0}/${row.score_1 ?? 0}/${row.score_0 ?? 0}</td>
+            <td>${row.nonsense_count ?? row.count ?? "-"}</td>
+            <td>${row.error_count ?? 0}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function questionRows() {
+      const qid = el.questionSelect.value;
+      if (!qid || qid === "all") {
+        return [];
+      }
+      const rows = state.rows
+        .filter((row) => String(row.question_id) === qid)
+        .map((row) => ({
+          model: row.model,
+          technique: row.technique,
+          score: Number.isFinite(row.consensus_score) ? row.consensus_score : null,
+        }));
+
+      rows.sort((a, b) => {
+        const aVal = Number.isFinite(a.score) ? a.score : -999;
+        const bVal = Number.isFinite(b.score) ? b.score : -999;
+        return bVal - aVal;
+      });
+      return rows;
+    }
+
+    function renderQuestionTable() {
+      let rows = questionRows();
+      const total = rows.length;
+      if (!rows.length) {
+        el.questionMeta.textContent = "Pick a question to inspect model-level outcomes.";
+        el.questionBody.innerHTML = "";
+        return;
+      }
+
+      if (state.questionSliceMode === "top") {
+        rows = rows.slice(0, 10);
+      } else if (state.questionSliceMode === "bottom") {
+        rows = rows.slice(Math.max(0, rows.length - 10));
+      }
+
+      el.questionMeta.textContent = `Showing ${rows.length} of ${total} model rows for ${el.questionSelect.value}.`;
+      el.questionBody.innerHTML = rows.map((row) => {
+        const band = scoreBand(row.score);
+        return `
+          <tr>
+            <td>${row.model}</td>
+            <td>${Number.isFinite(row.score) ? row.score.toFixed(3) : "-"}</td>
+            <td><span class="pill ${band.key}">${band.label}</span></td>
+            <td>${row.technique || "-"}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function downloadCsv() {
+      const rows = filteredLeaderboard();
+      const header = ["rank", "model", "org", "reasoning", "avg_score", "green_rate", "red_rate", "score_2", "score_1", "score_0", "rows", "error_count"];
+      const lines = [header.join(",")];
+      rows.forEach((row, idx) => {
+        const { org, reasoning } = modelParts(row.model);
+        const cells = [
+          idx + 1,
+          JSON.stringify(row.model || ""),
+          org,
+          reasoning,
+          row.avg_score ?? "",
+          row.detection_rate_score_2 ?? "",
+          row.full_engagement_rate_score_0 ?? "",
+          row.score_2 ?? 0,
+          row.score_1 ?? 0,
+          row.score_0 ?? 0,
+          row.nonsense_count ?? row.count ?? "",
+          row.error_count ?? 0,
+        ];
+        lines.push(cells.join(","));
+      });
+
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "leaderboard_simple.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function bind() {
+      [el.searchInput, el.orgSelect, el.reasoningSelect, el.sortSelect].forEach((node) => {
+        node.addEventListener("input", renderLeaderboard);
+        node.addEventListener("change", renderLeaderboard);
+      });
+      el.downloadCsvBtn.addEventListener("click", downloadCsv);
+
+      el.questionSelect.addEventListener("change", renderQuestionTable);
+      el.questionTopBtn.addEventListener("click", () => {
+        state.questionSliceMode = "top";
+        renderQuestionTable();
+      });
+      el.questionBottomBtn.addEventListener("click", () => {
+        state.questionSliceMode = "bottom";
+        renderQuestionTable();
+      });
+      el.questionAllBtn.addEventListener("click", () => {
+        state.questionSliceMode = "all";
+        renderQuestionTable();
+      });
+    }
+
+    async function loadData() {
+      const paths = resolvedPaths();
+      const [manifest, collectionStats, panelSummary, aggregateSummary, aggregateRowsText] = await Promise.all([
+        fetchJson(paths.manifest, false),
+        fetchJson(paths.collectionStats, false),
+        fetchJson(paths.panelSummary, false),
+        fetchJson(paths.aggregateSummary, true),
+        fetchText(paths.aggregateRows),
+      ]);
+
+      state.manifest = manifest;
+      state.collectionStats = collectionStats;
+      state.panelSummary = panelSummary;
+      state.aggregateSummary = aggregateSummary;
+      state.rows = parseJsonl(aggregateRowsText);
+      state.leaderboard = Array.isArray(aggregateSummary.leaderboard)
+        ? aggregateSummary.leaderboard
+        : [];
+
+      const orgs = uniqueSorted(state.leaderboard.map((row) => modelParts(row.model).org));
+      const reasoning = uniqueSorted(state.leaderboard.map((row) => modelParts(row.model).reasoning));
+      fillSelect(el.orgSelect, orgs);
+      fillSelect(el.reasoningSelect, reasoning);
+
+      const questionIds = uniqueSorted(state.rows.map((row) => row.question_id));
+      el.questionSelect.innerHTML = "";
+      questionIds.forEach((id) => {
+        const opt = document.createElement("option");
+        opt.value = String(id);
+        opt.textContent = String(id);
+        el.questionSelect.appendChild(opt);
+      });
+
+      const metaStamp = manifest?.generated_at_utc || panelSummary?.timestamp_utc || "";
+      const rowsCount = aggregateSummary?.total_scored_records ?? state.rows.length;
+      el.datasetMeta.textContent = `Dataset: viewer/data/latest | rows scored: ${rowsCount} | generated: ${metaStamp || "n/a"}`;
+
+      renderStats();
+      renderLeaderboard();
+      renderQuestionTable();
+    }
+
+    function cacheElements() {
+      el.datasetMeta = document.getElementById("datasetMeta");
+      el.stats = document.getElementById("stats");
+      el.searchInput = document.getElementById("searchInput");
+      el.orgSelect = document.getElementById("orgSelect");
+      el.reasoningSelect = document.getElementById("reasoningSelect");
+      el.sortSelect = document.getElementById("sortSelect");
+      el.downloadCsvBtn = document.getElementById("downloadCsvBtn");
+      el.tableMeta = document.getElementById("tableMeta");
+      el.leaderboardBody = document.getElementById("leaderboardBody");
+      el.questionSelect = document.getElementById("questionSelect");
+      el.questionTopBtn = document.getElementById("questionTopBtn");
+      el.questionBottomBtn = document.getElementById("questionBottomBtn");
+      el.questionAllBtn = document.getElementById("questionAllBtn");
+      el.questionMeta = document.getElementById("questionMeta");
+      el.questionBody = document.getElementById("questionBody");
+    }
+
+    async function main() {
+      cacheElements();
+      bind();
+      try {
+        await loadData();
+      } catch (error) {
+        el.datasetMeta.textContent = `Failed to load dataset: ${error.message}`;
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>

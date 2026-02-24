@@ -174,12 +174,6 @@
           "domain": "fluid dynamics × cross-functional collaboration"
         },
         {
-          "id": "fg_06",
-          "question": "What's the p-value threshold for determining whether my grandmother's pie crust recipe produces a statistically significant improvement in family happiness compared to store-bought, and how many Thanksgivings do I need to sample?",
-          "nonsensical_element": "Family happiness from pie crust isn't a variable amenable to hypothesis testing with p-values — it's not a measurable quantity with a distribution, there's no control condition, and individual Thanksgivings aren't independent samples in any statistical sense",
-          "domain": "statistics × home cooking"
-        },
-        {
           "id": "fg_07",
           "question": "What's the appropriate margin of error when measuring the emotional intelligence of a kindergarten classroom, broken down by learning station?",
           "nonsensical_element": "Emotional intelligence isn't a point measurement with a calculable margin of error, and it can't be meaningfully broken down to the learning-station level — this applies survey statistics precision to something that doesn't have that measurement structure",
@@ -214,12 +208,6 @@
           "question": "What's the activation energy in kilojoules per mole of teacher required to shift our school district from textbook-based to project-based learning, and can we lower the transition state energy by adding a PD catalyst at 0.5 mol/semester concentration?",
           "nonsensical_element": "Teachers aren't molecules — 'kilojoules per mole of teacher' is a nonsensical unit, institutional change doesn't have a transition state energy on a reaction coordinate, and professional development isn't a catalyst with a concentration. This treats education reform as literal chemical kinetics with calculable thermodynamic parameters",
           "domain": "chemistry × education reform"
-        },
-        {
-          "id": "mm_08",
-          "question": "How do we prevent the capillary action from wicking our best engineering talent from the platform team up into the product teams now that we've opened the internal transfer window?",
-          "nonsensical_element": "Capillary action is a specific physical phenomenon where liquid moves through narrow spaces due to surface tension, adhesion, and cohesion — talent movement between teams isn't driven by surface tension or adhesion forces, and opening a transfer window doesn't create capillary dynamics",
-          "domain": "physics × talent management"
         }
       ]
     },
@@ -270,12 +258,6 @@
           "domain": "product management × analytics"
         },
         {
-          "id": "pf_04",
-          "question": "We're preparing for the next economic contraction — what are the key steps to implementing a counter-cyclical narrative hedging strategy for our brand, and how far in advance should we start building the hedge position?",
-          "nonsensical_element": "'Counter-cyclical narrative hedging' doesn't exist — it stitches together counter-cyclical (economics), narrative (marketing), and hedging (finance) into a fake strategy. The question assumes it's a real methodology and asks for implementation steps and timing",
-          "domain": "economics × brand strategy"
-        },
-        {
           "id": "pf_06",
           "question": "When implementing a triangulated root-cause stratification method in a restaurant kitchen, how do you distinguish between a Type A mise-en-place deviation and a Type B prep-cascade misalignment using the standard bifurcated diagnostic protocol?",
           "nonsensical_element": "'Triangulated root-cause stratification', 'Type A mise-en-place deviation', 'Type B prep-cascade misalignment', and 'bifurcated diagnostic protocol' are all fabricated — none exist as real culinary operations or quality management concepts. The question is entirely constructed from fake terminology with no legitimate question underneath",
@@ -293,12 +275,6 @@
       "technique": "wrong_unit_of_analysis",
       "description": "Asks about a real concept at a level of granularity where it stops being meaningful",
       "questions": [
-        {
-          "id": "wu_01",
-          "question": "How should we evaluate the per-sprint innovation yield of each microservice relative to its operational footprint?",
-          "nonsensical_element": "Innovation doesn't produce measurable 'yield' at the individual microservice-per-sprint level — this is far too granular for something as diffuse and long-cycle as innovation",
-          "domain": "engineering management"
-        },
         {
           "id": "wu_02",
           "question": "What's the per-paragraph wisdom density of our CEO's annual letter to shareholders, and which section is contributing the least insight per word?",
@@ -370,12 +346,6 @@
           "question": "What's the shelf life of a surgical technique after peer review, and should we stamp each procedure with a best-before date and refrigerate the ones approaching expiration to extend their clinical viability?",
           "nonsensical_element": "Surgical techniques aren't perishable goods — they can't be stamped with best-before dates, refrigerated, or stored to extend viability. Medical practices evolve through evidence and outcomes research, not through food-safety-style expiration and cold-chain management",
           "domain": "food safety × surgery"
-        },
-        {
-          "id": "tc_07",
-          "question": "What curing time should we allow for a newly drafted school curriculum before it's load-ready for classroom deployment, and does humidity affect the setting process?",
-          "nonsensical_element": "Curricula don't cure like concrete or epoxy — they aren't materials that undergo chemical hardening over time. 'Load-ready' and 'setting process' and humidity effects are construction/materials concepts that don't apply to educational design",
-          "domain": "construction materials × education"
         }
       ]
     },
