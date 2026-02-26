@@ -10,7 +10,8 @@ Usage:
     --panel-summary <path/to/panel_summary.json> \
     --aggregate-summary <path/to/aggregate_summary.json> \
     --aggregate-rows <path/to/aggregate.jsonl> \
-    [--output-dir data/latest]
+    [--output-dir data/latest] \
+    [--merge]
 
 Copies the selected run artifacts into a stable viewer dataset directory:
   responses.jsonl
@@ -20,6 +21,10 @@ Copies the selected run artifacts into a stable viewer dataset directory:
   aggregate.jsonl
   leaderboard.csv
   manifest.json
+
+With --merge, new JSONL rows are merged into existing data instead of
+replacing it. Rows are deduped by (model, question_id, run_index) with
+new rows taking precedence.
 EOF
 }
 
@@ -32,6 +37,7 @@ COLLECTION_STATS_FILE=""
 PANEL_SUMMARY_FILE=""
 AGGREGATE_SUMMARY_FILE=""
 AGGREGATE_ROWS_FILE=""
+MERGE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -58,6 +64,10 @@ while [[ $# -gt 0 ]]; do
     --output-dir)
       OUTPUT_DIR="${2:-}"
       shift 2
+      ;;
+    --merge)
+      MERGE=1
+      shift
       ;;
     -h|--help)
       usage
@@ -126,11 +136,107 @@ PY
   cp "${source_file}" "${target_file}"
 }
 
-copy_file "${RESPONSES_FILE}" "${OUTPUT_DIR}/responses.jsonl"
-copy_file "${COLLECTION_STATS_FILE}" "${OUTPUT_DIR}/collection_stats.json"
-copy_file "${PANEL_SUMMARY_FILE}" "${OUTPUT_DIR}/panel_summary.json"
-copy_file "${AGGREGATE_SUMMARY_FILE}" "${OUTPUT_DIR}/aggregate_summary.json"
-copy_file "${AGGREGATE_ROWS_FILE}" "${OUTPUT_DIR}/aggregate.jsonl"
+if [[ "${MERGE}" -eq 1 ]]; then
+  echo "Merging new results into ${OUTPUT_DIR} ..."
+
+  # Merge responses.jsonl
+  python3 - <<'PY' "${OUTPUT_DIR}/responses.jsonl" "${RESPONSES_FILE}"
+import json
+import pathlib
+import sys
+
+existing_path = pathlib.Path(sys.argv[1])
+new_path = pathlib.Path(sys.argv[2])
+
+def dedup_key(row):
+    return (str(row.get("model", "")), str(row.get("question_id", "")), int(row.get("run_index", 0) or 0))
+
+merged = {}
+if existing_path.exists():
+    for line in existing_path.read_text(encoding="utf-8").split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        row = json.loads(line)
+        merged[dedup_key(row)] = row
+
+for line in new_path.read_text(encoding="utf-8").split("\n"):
+    line = line.strip()
+    if not line:
+        continue
+    row = json.loads(line)
+    merged[dedup_key(row)] = row
+
+rows = sorted(
+    merged.values(),
+    key=lambda r: (str(r.get("model", "")), int(r.get("run_index", 0) or 0), str(r.get("question_id", ""))),
+)
+
+tmp = existing_path.with_suffix(".tmp")
+with tmp.open("w", encoding="utf-8") as f:
+    for row in rows:
+        f.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+tmp.rename(existing_path)
+print(f"Merged responses: {len(rows)} rows")
+PY
+
+  # Merge aggregate.jsonl
+  python3 - <<'PY' "${OUTPUT_DIR}/aggregate.jsonl" "${AGGREGATE_ROWS_FILE}"
+import json
+import pathlib
+import sys
+
+existing_path = pathlib.Path(sys.argv[1])
+new_path = pathlib.Path(sys.argv[2])
+
+def dedup_key(row):
+    return (str(row.get("model", "")), str(row.get("question_id", "")), int(row.get("run_index", 0) or 0))
+
+merged = {}
+if existing_path.exists():
+    for line in existing_path.read_text(encoding="utf-8").split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        row = json.loads(line)
+        merged[dedup_key(row)] = row
+
+for line in new_path.read_text(encoding="utf-8").split("\n"):
+    line = line.strip()
+    if not line:
+        continue
+    row = json.loads(line)
+    merged[dedup_key(row)] = row
+
+rows = sorted(
+    merged.values(),
+    key=lambda r: (str(r.get("model", "")), int(r.get("run_index", 0) or 0), str(r.get("question_id", ""))),
+)
+
+tmp = existing_path.with_suffix(".tmp")
+with tmp.open("w", encoding="utf-8") as f:
+    for row in rows:
+        f.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+tmp.rename(existing_path)
+print(f"Merged aggregate: {len(rows)} rows")
+PY
+
+  # Overwrite metadata files (not meaningfully mergeable)
+  copy_file "${COLLECTION_STATS_FILE}" "${OUTPUT_DIR}/collection_stats.json"
+  copy_file "${PANEL_SUMMARY_FILE}" "${OUTPUT_DIR}/panel_summary.json"
+
+  # Regenerate aggregate_summary from merged aggregate.jsonl
+  python3 scripts/openrouter_benchmark.py regenerate-summary \
+    --aggregate-file "${OUTPUT_DIR}/aggregate.jsonl" \
+    --output-file "${OUTPUT_DIR}/aggregate_summary.json"
+
+else
+  copy_file "${RESPONSES_FILE}" "${OUTPUT_DIR}/responses.jsonl"
+  copy_file "${COLLECTION_STATS_FILE}" "${OUTPUT_DIR}/collection_stats.json"
+  copy_file "${PANEL_SUMMARY_FILE}" "${OUTPUT_DIR}/panel_summary.json"
+  copy_file "${AGGREGATE_SUMMARY_FILE}" "${OUTPUT_DIR}/aggregate_summary.json"
+  copy_file "${AGGREGATE_ROWS_FILE}" "${OUTPUT_DIR}/aggregate.jsonl"
+fi
 
 python3 - <<'PY' "${OUTPUT_DIR}/panel_summary.json"
 import json

@@ -7,3 +7,4 @@ share/
 tmp_*.json
 *.zip
 *_report.html
+output-*

@@ -12,14 +12,19 @@ Runs the full benchmark flow:
   3) publish latest viewer dataset
 
 Options:
-  --config <path>       Config file (default: config.json)
-  --output-dir <dir>    Output base dir (default: runs)
-  --run-id <id>         Explicit run id (default: auto timestamp)
-  --panel-id <id>       Explicit panel id (default: <run-id>_panel)
-  --dry-run             Pass --dry-run to collect and grade-panel
-  --serve               Start local HTTP server after publish
-  --port <port>         HTTP server port for --serve (default: 8877)
-  -h, --help            Show this help
+  --config <path>              Config file (default: config.json)
+  --output-dir <dir>           Output base dir (default: runs)
+  --run-id <id>                Explicit run id (default: auto timestamp)
+  --panel-id <id>              Explicit panel id (default: <run-id>_panel)
+  --models <list>              Comma-separated model list (overrides config.json)
+  --collect-endpoint <url>     OpenAI-compatible endpoint for collect (default: OpenRouter)
+  --collect-api-key <key>      API key for collect endpoint (not needed for Ollama)
+  --ollama-mode                Sequential model execution with unload between models
+  --merge                      Merge new results into existing viewer data instead of replacing
+  --dry-run                    Pass --dry-run to collect and grade-panel
+  --serve                      Start local HTTP server after publish
+  --port <port>                HTTP server port for --serve (default: 8877)
+  -h, --help                   Show this help
 EOF
 }
 
@@ -30,6 +35,11 @@ CONFIG_PATH="config.json"
 OUTPUT_DIR="runs"
 RUN_ID=""
 PANEL_ID=""
+MODELS=""
+COLLECT_ENDPOINT=""
+COLLECT_API_KEY=""
+OLLAMA_MODE=0
+MERGE=0
 DRY_RUN=0
 SERVE=0
 PORT=8877
@@ -51,6 +61,26 @@ while [[ $# -gt 0 ]]; do
     --panel-id)
       PANEL_ID="${2:-}"
       shift 2
+      ;;
+    --models)
+      MODELS="${2:-}"
+      shift 2
+      ;;
+    --collect-endpoint)
+      COLLECT_ENDPOINT="${2:-}"
+      shift 2
+      ;;
+    --collect-api-key)
+      COLLECT_API_KEY="${2:-}"
+      shift 2
+      ;;
+    --ollama-mode)
+      OLLAMA_MODE=1
+      shift
+      ;;
+    --merge)
+      MERGE=1
+      shift
       ;;
     --dry-run)
       DRY_RUN=1
@@ -83,8 +113,13 @@ fi
 
 if [[ "${DRY_RUN}" -ne 1 ]]; then
   if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
-    echo "OPENROUTER_API_KEY is required unless --dry-run is used." >&2
-    exit 1
+    if [[ -z "${COLLECT_ENDPOINT}" ]]; then
+      echo "OPENROUTER_API_KEY is required unless --collect-endpoint or --dry-run is used." >&2
+      exit 1
+    else
+      echo "Warning: OPENROUTER_API_KEY not set. Collect will use ${COLLECT_ENDPOINT}." >&2
+      echo "         Grade-panel will fail unless OPENROUTER_API_KEY is set." >&2
+    fi
   fi
 fi
 
@@ -107,6 +142,18 @@ collect_cmd=(
   --output-dir "${OUTPUT_DIR}"
   --run-id "${RUN_ID}"
 )
+if [[ -n "${MODELS}" ]]; then
+  collect_cmd+=(--models "${MODELS}")
+fi
+if [[ -n "${COLLECT_ENDPOINT}" ]]; then
+  collect_cmd+=(--collect-endpoint "${COLLECT_ENDPOINT}")
+fi
+if [[ -n "${COLLECT_API_KEY}" ]]; then
+  collect_cmd+=(--collect-api-key "${COLLECT_API_KEY}")
+fi
+if [[ "${OLLAMA_MODE}" -eq 1 ]]; then
+  collect_cmd+=(--ollama-mode)
+fi
 if [[ "${DRY_RUN}" -eq 1 ]]; then
   collect_cmd+=(--dry-run)
 fi
@@ -124,6 +171,7 @@ panel_cmd=(
 if [[ "${DRY_RUN}" -eq 1 ]]; then
   panel_cmd+=(--dry-run)
 fi
+panel_cmd+=(--no-fail-on-error)
 
 echo "==> Grade panel: ${PANEL_ID}"
 "${panel_cmd[@]}"
@@ -155,12 +203,18 @@ AGGREGATE_SUMMARY_FILE="${AGGREGATE_DIR}/aggregate_summary.json"
 AGGREGATE_ROWS_FILE="${AGGREGATE_DIR}/aggregate.jsonl"
 
 echo "==> Publish viewer dataset"
-./scripts/publish_latest_to_viewer.sh \
-  --responses-file "${RESPONSES_FILE}" \
-  --collection-stats "${COLLECTION_STATS_FILE}" \
-  --panel-summary "${PANEL_SUMMARY_FILE}" \
-  --aggregate-summary "${AGGREGATE_SUMMARY_FILE}" \
+publish_cmd=(
+  ./scripts/publish_latest_to_viewer.sh
+  --responses-file "${RESPONSES_FILE}"
+  --collection-stats "${COLLECTION_STATS_FILE}"
+  --panel-summary "${PANEL_SUMMARY_FILE}"
+  --aggregate-summary "${AGGREGATE_SUMMARY_FILE}"
   --aggregate-rows "${AGGREGATE_ROWS_FILE}"
+)
+if [[ "${MERGE}" -eq 1 ]]; then
+  publish_cmd+=(--merge)
+fi
+"${publish_cmd[@]}"
 
 echo ""
 echo "Complete."

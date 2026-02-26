@@ -73,7 +73,7 @@
     "parallelism": 8,
     "judge_temperature": null,
     "judge_reasoning_effort": "medium",
-    "judge_max_tokens": 0,
+    "judge_max_tokens": 4096,
     "store_judge_response_raw": true,
     "judge_no_hint": true
   },

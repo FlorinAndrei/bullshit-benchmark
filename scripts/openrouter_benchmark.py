@@ -235,6 +235,9 @@ COLLECT_DEFAULTS: dict[str, Any] = {
     "resume": False,
     "fail_on_error": True,
     "config": "config.json",
+    "collect_endpoint": "",
+    "collect_api_key": "",
+    "ollama_mode": False,
 }
 
 GRADE_DEFAULTS: dict[str, Any] = {
@@ -461,6 +464,26 @@ def parse_args() -> argparse.Namespace:
         dest="fail_on_error",
         action="store_false",
         help="Do not fail process exit code when collection has row-level errors.",
+    )
+    collect.add_argument(
+        "--collect-endpoint",
+        default="",
+        help="Base URL for an OpenAI-compatible collect endpoint. "
+             "Default: OpenRouter. Example for Ollama: http://host:11434/v1",
+    )
+    collect.add_argument(
+        "--collect-api-key",
+        default="",
+        help="API key for the collect endpoint (not needed for Ollama). "
+             "Falls back to COLLECT_API_KEY env var. "
+             "Ignored when using OpenRouter (uses OPENROUTER_API_KEY).",
+    )
+    collect.add_argument(
+        "--ollama-mode",
+        action="store_true",
+        default=False,
+        help="Ollama mode: run one model at a time, unload between models, "
+             "parallelism defaults to 1. Requires --collect-endpoint.",
     )
 
     grade = subparsers.add_parser(
@@ -698,6 +721,21 @@ def parse_args() -> argparse.Namespace:
     report.add_argument("--aggregate-dir", default="")
     report.add_argument("--output-file", default="report.html")
     report.add_argument("--config", default="config.json")
+
+    regen = subparsers.add_parser(
+        "regenerate-summary",
+        help="Regenerate aggregate_summary.json from an aggregate.jsonl file.",
+    )
+    regen.add_argument(
+        "--aggregate-file",
+        required=True,
+        help="Path to aggregate.jsonl.",
+    )
+    regen.add_argument(
+        "--output-file",
+        required=True,
+        help="Path to write aggregate_summary.json.",
+    )
 
     parsed = parser.parse_args()
     setattr(parsed, "_raw_argv", list(sys.argv[1:]))
@@ -1340,14 +1378,29 @@ def normalize_message_content(content: Any) -> str:
 
 
 class OpenRouterClient:
-    def __init__(self, api_key: str, timeout_seconds: int) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        timeout_seconds: int,
+        base_url: str = "",
+    ) -> None:
         if timeout_seconds < 1:
             raise ValueError("timeout_seconds must be >= 1")
         self.api_key = api_key
         self.timeout_seconds = timeout_seconds
-        self.base_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.referer = os.getenv("OPENROUTER_REFERER", "")
-        self.app_name = os.getenv("OPENROUTER_APP_NAME", "bullshit-benchmark")
+        self.base_url = (
+            base_url.rstrip("/") if base_url.strip()
+            else "https://openrouter.ai/api/v1/chat/completions"
+        )
+        if self.base_url and not self.base_url.endswith("/chat/completions"):
+            self.base_url = self.base_url.rstrip("/") + "/chat/completions"
+        self.is_openrouter = "openrouter.ai" in self.base_url
+        self.api_label = "OpenRouter" if self.is_openrouter else self.base_url
+        self.referer = os.getenv("OPENROUTER_REFERER", "") if self.is_openrouter else ""
+        self.app_name = (
+            os.getenv("OPENROUTER_APP_NAME", "bullshit-benchmark")
+            if self.is_openrouter else ""
+        )
 
     def chat(
         self,
@@ -1371,13 +1424,15 @@ class OpenRouterClient:
             payload.update(extra_payload)
         encoded = json.dumps(payload).encode("utf-8")
 
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
+        headers: dict[str, str] = {
             "Content-Type": "application/json",
-            "X-Title": self.app_name,
         }
-        if self.referer:
-            headers["HTTP-Referer"] = self.referer
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        if self.is_openrouter:
+            headers["X-Title"] = self.app_name
+            if self.referer:
+                headers["HTTP-Referer"] = self.referer
 
         if retries < 1:
             raise ValueError("retries must be >= 1")
@@ -1396,21 +1451,21 @@ class OpenRouterClient:
                     raw = resp.read().decode("utf-8")
                 parsed = json.loads(raw)
                 if not isinstance(parsed, dict):
-                    raise RuntimeError("OpenRouter returned non-object JSON.")
+                    raise RuntimeError(f"{self.api_label} returned non-object JSON.")
                 return parsed
             except urllib.error.HTTPError as exc:
                 detail = exc.read().decode("utf-8", errors="ignore")
                 retry_after_header = exc.headers.get("Retry-After") if exc.headers else None
                 retryable = is_retryable_http_status(exc.code)
                 last_error = RuntimeError(
-                    f"HTTP {exc.code} from OpenRouter (attempt {attempt}/{retries})"
+                    f"HTTP {exc.code} from {self.api_label} (attempt {attempt}/{retries})"
                     f"{' [retryable]' if retryable else ' [non-retryable]'}: {detail}"
                 )
                 if not retryable:
                     raise last_error from exc
             except Exception as exc:  # pylint: disable=broad-except
                 last_error = RuntimeError(
-                    f"OpenRouter call failed (attempt {attempt}/{retries}): {exc}"
+                    f"{self.api_label} call failed (attempt {attempt}/{retries}): {exc}"
                 )
 
             if attempt < retries:
@@ -1418,6 +1473,35 @@ class OpenRouterClient:
 
         assert last_error is not None
         raise last_error
+
+
+def ollama_unload_model(endpoint_base_url: str, model: str) -> None:
+    """Unload a model from Ollama by calling the native /api/generate endpoint."""
+    # Derive the Ollama native API URL from the OpenAI-compat endpoint.
+    # e.g. http://host:11434/v1/chat/completions -> http://host:11434
+    url = endpoint_base_url
+    for suffix in ("/chat/completions", "/v1"):
+        url = url.rstrip("/")
+        if url.endswith(suffix):
+            url = url[: -len(suffix)]
+    url = url.rstrip("/") + "/api/generate"
+    payload = json.dumps({"model": model, "keep_alive": 0}).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as resp:
+            resp.read()
+        print(f"  Unloaded model: {model}", flush=True)
+    except Exception as exc:  # pylint: disable=broad-except
+        print(
+            f"  Warning: failed to unload model {model}: {exc}",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 def extract_model_text(api_response: dict[str, Any]) -> str:
@@ -1581,7 +1665,7 @@ def collect_one(
         else:
             assert client is not None
             extra_payload: dict[str, Any] | None = None
-            if effort_value is not None:
+            if effort_value is not None and client.is_openrouter:
                 extra_payload = {
                     "reasoning": {"effort": effort_value},
                     "provider": {"require_parameters": True},
@@ -1638,12 +1722,42 @@ def run_collect(args: argparse.Namespace) -> int:
     validate_retry_and_timeout(args.retries, args.timeout_seconds)
 
     models = load_models(args.models, args.models_file)
+
+    collect_endpoint = getattr(args, "collect_endpoint", "").strip()
+    collect_is_openrouter = not collect_endpoint or "openrouter.ai" in collect_endpoint
+    ollama_mode = bool(getattr(args, "ollama_mode", False))
+    if ollama_mode:
+        if collect_is_openrouter:
+            print(
+                "Error: --ollama-mode requires --collect-endpoint.",
+                file=sys.stderr,
+                flush=True,
+            )
+            return 2
+        if not cli_option_was_provided(args, "parallelism"):
+            args.parallelism = 1
+
     base_reasoning_effort = normalize_reasoning_effort(
         args.response_reasoning_effort, field_name="--response-reasoning-effort"
     )
     per_model_reasoning_efforts = parse_model_reasoning_efforts(
         args.model_reasoning_efforts
     )
+    if not collect_is_openrouter:
+        if per_model_reasoning_efforts:
+            print(
+                "Warning: --model-reasoning-efforts ignored for non-OpenRouter endpoints.",
+                file=sys.stderr,
+                flush=True,
+            )
+            per_model_reasoning_efforts = {}
+        if base_reasoning_effort is not None:
+            print(
+                "Warning: --response-reasoning-effort ignored for non-OpenRouter endpoints.",
+                file=sys.stderr,
+                flush=True,
+            )
+            base_reasoning_effort = None
     unknown_reasoning_models = set(per_model_reasoning_efforts.keys()) - set(models)
     if unknown_reasoning_models:
         unknown_sorted = ", ".join(sorted(unknown_reasoning_models))
@@ -1715,6 +1829,9 @@ def run_collect(args: argparse.Namespace) -> int:
         "phase": "collect",
         "run_id": run_id,
         "timestamp_utc": timestamp.isoformat(),
+        "collect_endpoint": collect_endpoint or "https://openrouter.ai/api/v1",
+        "collect_is_openrouter": collect_is_openrouter,
+        "ollama_mode": ollama_mode,
         "resumed": bool(args.resume),
         "resumed_completed_rows": len(checkpoint_records),
         "questions_path": str(pathlib.Path(args.questions).resolve()),
@@ -1765,20 +1882,33 @@ def run_collect(args: argparse.Namespace) -> int:
 
     client: OpenRouterClient | None = None
     if not args.dry_run:
-        api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
-        if not api_key:
-            raise RuntimeError("OPENROUTER_API_KEY is required unless --dry-run is set.")
-        client = OpenRouterClient(api_key=api_key, timeout_seconds=args.timeout_seconds)
+        if collect_is_openrouter:
+            api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+            if not api_key:
+                raise RuntimeError(
+                    "OPENROUTER_API_KEY is required unless --dry-run is set."
+                )
+        else:
+            api_key = (
+                getattr(args, "collect_api_key", "").strip()
+                or os.getenv("COLLECT_API_KEY", "").strip()
+            )
+        client = OpenRouterClient(
+            api_key=api_key,
+            timeout_seconds=args.timeout_seconds,
+            base_url=collect_endpoint,
+        )
 
     started = time.perf_counter()
     records: list[dict[str, Any]] = list(checkpoint_records)
     total = len(tasks)
     completed = len(checkpoint_records)
 
-    if tasks_to_run:
+    def _run_task_batch(batch: list[dict[str, Any]]) -> None:
+        nonlocal completed
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallelism) as pool:
             in_flight: dict[concurrent.futures.Future[dict[str, Any]], dict[str, Any]] = {}
-            task_iter = iter(tasks_to_run)
+            task_iter = iter(batch)
 
             def submit_collect_task(task: dict[str, Any]) -> None:
                 future = pool.submit(
@@ -1797,7 +1927,7 @@ def run_collect(args: argparse.Namespace) -> int:
                 )
                 in_flight[future] = task
 
-            for _ in range(min(args.parallelism, len(tasks_to_run))):
+            for _ in range(min(args.parallelism, len(batch))):
                 try:
                     submit_collect_task(next(task_iter))
                 except StopIteration:
@@ -1881,6 +2011,31 @@ def run_collect(args: argparse.Namespace) -> int:
                         submit_collect_task(next(task_iter))
                     except StopIteration:
                         pass
+
+    if tasks_to_run:
+        if ollama_mode:
+            # Group tasks by model_id, preserving order of first appearance.
+            model_order: list[str] = []
+            tasks_by_model: dict[str, list[dict[str, Any]]] = {}
+            for task in tasks_to_run:
+                mid = task.get("model_id", task["model"])
+                if mid not in tasks_by_model:
+                    model_order.append(mid)
+                    tasks_by_model[mid] = []
+                tasks_by_model[mid].append(task)
+            for model_idx, model_id in enumerate(model_order, start=1):
+                model_tasks = tasks_by_model[model_id]
+                print(
+                    f"\n==> Ollama model {model_idx}/{len(model_order)}: "
+                    f"{model_id} ({len(model_tasks)} tasks)",
+                    flush=True,
+                )
+                _run_task_batch(model_tasks)
+                if not args.dry_run:
+                    assert client is not None
+                    ollama_unload_model(client.base_url, model_id)
+        else:
+            _run_task_batch(tasks_to_run)
 
     validate_collect_integrity(tasks, records)
 
@@ -2788,6 +2943,11 @@ def _run_grade_for_panel(
     output_dir: pathlib.Path,
     grade_id: str,
 ) -> pathlib.Path:
+    # Only resume if the grade directory actually exists; otherwise fall back
+    # to a fresh run (e.g. tiebreaker dir that was never created).
+    effective_resume = bool(panel_args.resume) and (
+        output_dir / "grades" / grade_id
+    ).exists()
     grade_args = _build_grade_args(
         panel_args,
         responses_file=responses_file,
@@ -2795,6 +2955,7 @@ def _run_grade_for_panel(
         output_dir=output_dir,
         grade_id=grade_id,
     )
+    grade_args.resume = effective_resume
     exit_code = run_grade(grade_args)
     if exit_code != 0 and panel_args.fail_on_error:
         raise RuntimeError(
@@ -4272,6 +4433,25 @@ def run_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_regenerate_summary(args: argparse.Namespace) -> int:
+    aggregate_path = pathlib.Path(args.aggregate_file)
+    if not aggregate_path.exists():
+        raise FileNotFoundError(f"Aggregate file not found: {aggregate_path}")
+    rows = read_jsonl(aggregate_path)
+    if not rows:
+        raise ValueError(f"No rows in {aggregate_path}")
+    num_judges = 0
+    sample = rows[0]
+    while f"judge_{num_judges + 1}_model" in sample:
+        num_judges += 1
+    consensus_method = sample.get("consensus_method", "primary_tiebreak")
+    summary = summarize_aggregate_rows(rows, consensus_method, num_judges)
+    output_path = pathlib.Path(args.output_file)
+    write_json(output_path, summary)
+    print(f"Regenerated summary: {output_path.resolve()}", flush=True)
+    return 0
+
+
 def main() -> int:
     args = parse_args()
     if args.command == "collect":
@@ -4284,6 +4464,8 @@ def main() -> int:
         return run_aggregate(args)
     if args.command == "report":
         return run_report(args)
+    if args.command == "regenerate-summary":
+        return run_regenerate_summary(args)
     raise ValueError(f"Unsupported command: {args.command}")
 
 
