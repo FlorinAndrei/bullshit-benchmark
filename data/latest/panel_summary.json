@@ -1,14 +1,19 @@
 {
-  "panel_id": "live_v2_20260224_093029_regrade55_full3_20260224_145642",
-  "timestamp_utc": "2026-02-24T16:31:37.102943+00:00",
+  "panel_id": "run_20260226_000844_panel",
+  "timestamp_utc": "2026-02-26T02:13:51.261705+00:00",
+  "responses_file": "/home/florin/git/FlorinAndrei/bullshit-benchmark/runs/run_20260226_000844/responses.jsonl",
   "primary_judges": [
     "anthropic/claude-sonnet-4.6",
-    "openai/gpt-5.2",
-    "google/gemini-3.1-pro-preview"
+    "openai/gpt-5.2"
   ],
-  "execution_mode": "manual_full_three_primary",
-  "disagreement_count": 738,
-  "disagreement_rate": 0.2855,
-  "consensus_method": "mean",
-  "fail_on_error": true
+  "tiebreaker_model": "google/gemini-3.1-pro-preview",
+  "parallel_primary_judges": true,
+  "resumed": false,
+  "parallelism": 8,
+  "primary_judges_max_inflight": 16,
+  "disagreement_count": 41,
+  "disagreement_rate": 0.2485,
+  "disagreement_file": "/home/florin/git/FlorinAndrei/bullshit-benchmark/runs/run_20260226_000844/grade_panels/run_20260226_000844_panel/disagreement_responses.jsonl",
+  "consensus_method": "primary_tiebreak",
+  "fail_on_error": false
 }
